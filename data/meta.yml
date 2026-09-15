@@ -14,7 +14,7 @@ datasets:
   source_encoding: xlsx
   data_source: NOAA National Centers for Environmental Information (nClimDiv, CONUS
     averages), via EPA source workbook; downloaded by ERG from noaa.gov/cag on 2024-02-13
-  web_update: .na
+  web_update: February 13, 2024
   unit: degrees F (anomaly vs. 1901-2000 average)
   rows: 512
   columns:
@@ -60,7 +60,7 @@ datasets:
   source_encoding: xlsx
   data_source: NOAA National Centers for Environmental Information (nClimDiv, CONUS
     averages), via EPA source workbook; downloaded by ERG from noaa.gov/cag on 2024-02-13
-  web_update: .na
+  web_update: February 13, 2024
   unit: degrees F (total change, 1896-2023)
   rows: 4
   columns:

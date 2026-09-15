@@ -192,7 +192,7 @@ meta <- list(
       source_sha256   = file_sha256(f1_path),
       source_encoding = "xlsx",
       data_source     = NOAA_WORKBOOK_SOURCE,
-      web_update      = NA,
+      web_update      = "February 13, 2024",
       unit            = "degrees F (anomaly vs. 1901-2000 average)",
       rows            = nrow(f1),
       columns         = FIG1_COLUMNS
@@ -218,7 +218,7 @@ meta <- list(
       source_sha256   = file_sha256(f3_path),
       source_encoding = "xlsx",
       data_source     = NOAA_WORKBOOK_SOURCE,
-      web_update      = NA,
+      web_update      = "February 13, 2024",
       unit            = "degrees F (total change, 1896-2023)",
       rows            = nrow(f3),
       columns         = FIG3_COLUMNS
