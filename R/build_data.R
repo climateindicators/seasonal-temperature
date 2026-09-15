@@ -2,11 +2,16 @@
 #
 #   Rscript R/build_data.R
 #
-# Reads EPA's published figure CSVs in data-raw/ and writes data/*.csv plus
-# data/meta.yml. Rerunning with unchanged inputs produces byte-identical output.
-# Nothing here touches the network.
+# Reads EPA's published figure CSVs and source workbook in data-raw/ and writes
+# data/*.csv plus data/meta.yml. Rerunning with unchanged inputs produces
+# byte-identical output. Nothing here touches the network.
 #
-# TO UPDATE THE DATA: drop replacement CSVs into data-raw/ and rerun. Headers
+# Figure 2 has a CSV download on EPA's page. Figures 1 and 3 do not (EPA
+# renders them as JavaScript charts with no underlying data file), so their
+# data comes from EPA's own source workbook instead, added directly to
+# data-raw/: "seasonal temperature - Figures 1 and 3 - 01-29-24.xlsx".
+#
+# TO UPDATE THE DATA: drop replacement files into data-raw/ and rerun. Headers
 # are asserted, not assumed, so a renamed or reordered column stops the build.
 
 suppressPackageStartupMessages({
@@ -48,19 +53,19 @@ SEASONS_F1 <- c("Winter", "Spring", "Summer", "Fall")
 # The sheet lays out four season blocks side by side (Year, Anomaly), each
 # under its own season label one row above the column header. Both rows are
 # asserted so a reordered or relabelled block stops the build.
-f1_season_row <- read_excel(f1_path, sheet = f1_sheet, n_max = 1, col_names = FALSE)
+f1_season_row <- suppressMessages(read_excel(f1_path, sheet = f1_sheet, n_max = 1, col_names = FALSE))
 stopifnot(
   "figure 1: expects 4 season blocks in Winter, Spring, Summer, Fall order" =
     identical(toupper(trimws(as.character(f1_season_row[1, c(1, 3, 5, 7)]))), toupper(SEASONS_F1))
 )
 
-f1_header_row <- read_excel(f1_path, sheet = f1_sheet, skip = 1, n_max = 1, col_names = FALSE)
+f1_header_row <- suppressMessages(read_excel(f1_path, sheet = f1_sheet, skip = 1, n_max = 1, col_names = FALSE))
 stopifnot(
   "figure 1: expects a Year / Anomaly (degrees F) pair per season block" =
     identical(as.character(f1_header_row[1, ]), rep(c("Year", "Anomaly (degrees F)"), 4))
 )
 
-f1_raw <- read_excel(f1_path, sheet = f1_sheet, skip = 2, col_names = FALSE, col_types = "text")
+f1_raw <- suppressMessages(read_excel(f1_path, sheet = f1_sheet, skip = 2, col_names = FALSE, col_types = "text"))
 stopifnot("figure 1: expects 8 columns (4 seasons x Year/Anomaly)" = ncol(f1_raw) == 8L)
 
 f1 <- do.call(rbind, lapply(seq_along(SEASONS_F1), function(i) {
@@ -121,11 +126,49 @@ assert_conservation(f2_raw, SEASONS, nrow(f2), "seasonal-temperature_fig-2.csv")
 
 write_csv_stable(f2, file.path(out_dir, "seasonal_temperature_change_by_state.csv"))
 
+# ---- Figure 3: total change in temperature by season, 1896-2023 -------------
+#
+# Same "no CSV on the page" situation as Figure 1; same source workbook, its
+# "Data for Figure 3" sheet.
+
+f3_path  <- file.path(raw_dir, "seasonal temperature - Figures 1 and 3 - 01-29-24.xlsx")
+f3_sheet <- "Data for Figure 3"
+
+f3_raw <- read_excel(f3_path, sheet = f3_sheet, col_types = c("text", "text"))
+stopifnot(
+  "figure 3: expects Season + 1896-2023 total change (degF) columns" =
+    identical(names(f3_raw), c("Season", "1896-2023 total change (degF)")),
+  "figure 3: expects one row per season" = nrow(f3_raw) == 4L,
+  "figure 3: expects Winter, Spring, Summer, Fall in that order" =
+    identical(f3_raw$Season, c("Winter", "Spring", "Summer", "Fall"))
+)
+
+# Kept at full source precision (unlike Figure 1): this is a computed total
+# change, not a rounded annual reading, so nothing here is float noise.
+f3 <- data.frame(
+  season = f3_raw$Season,
+  value  = f3_raw[["1896-2023 total change (degF)"]],
+  stringsAsFactors = FALSE
+)
+
+write_csv_stable(f3, file.path(out_dir, "seasonal_temperature_total_change_by_season.csv"))
+
 # ---- Data dictionary ---------------------------------------------------------
 
 col <- function(name, type, description) {
   list(name = name, type = type, description = description)
 }
+
+NOAA_WORKBOOK_SOURCE <- paste(
+  "NOAA National Centers for Environmental Information (nClimDiv, CONUS averages),",
+  "via EPA source workbook; downloaded by ERG from noaa.gov/cag on 2024-02-13"
+)
+
+FIG1_COLUMNS <- list(
+  col("year", "integer", "Year a season falls in (winter is assigned to the year it ends in, e.g. Dec 2015-Feb 2016 is winter 2016)."),
+  col("season", "character", "Meteorological season: Winter (Dec-Feb), Spring (Mar-May), Summer (Jun-Aug), or Fall (Sep-Nov)."),
+  col("value", "numeric", "Average seasonal temperature anomaly vs. the 1901-2000 average, in degrees Fahrenheit.")
+)
 
 FIG2_COLUMNS <- list(
   col("state", "character", "Two-letter U.S. state postal code (contiguous 48 states only)."),
@@ -133,9 +176,27 @@ FIG2_COLUMNS <- list(
   col("value", "numeric", "Total change in average seasonal temperature, 1896-2023, in degrees Fahrenheit.")
 )
 
+FIG3_COLUMNS <- list(
+  col("season", "character", "Meteorological season: Winter (Dec-Feb), Spring (Mar-May), Summer (Jun-Aug), or Fall (Sep-Nov)."),
+  col("value", "numeric", "Total change in average seasonal temperature across the contiguous 48 states, 1896-2023, in degrees Fahrenheit.")
+)
+
 meta <- list(
   indicator = INDICATOR,
   datasets = list(
+    list(
+      file            = "seasonal_temperature_annual_anomaly.csv",
+      figure          = "Figure 1",
+      figure_title    = "Figure 1",
+      source_file     = "seasonal temperature - Figures 1 and 3 - 01-29-24.xlsx",
+      source_sha256   = file_sha256(f1_path),
+      source_encoding = "xlsx",
+      data_source     = NOAA_WORKBOOK_SOURCE,
+      web_update      = NA,
+      unit            = "degrees F (anomaly vs. 1901-2000 average)",
+      rows            = nrow(f1),
+      columns         = FIG1_COLUMNS
+    ),
     list(
       file            = "seasonal_temperature_change_by_state.csv",
       figure          = "Figure 2",
@@ -148,6 +209,19 @@ meta <- list(
       unit            = f2_meta$units,
       rows            = nrow(f2),
       columns         = FIG2_COLUMNS
+    ),
+    list(
+      file            = "seasonal_temperature_total_change_by_season.csv",
+      figure          = "Figure 3",
+      figure_title    = "Figure 3",
+      source_file     = "seasonal temperature - Figures 1 and 3 - 01-29-24.xlsx",
+      source_sha256   = file_sha256(f3_path),
+      source_encoding = "xlsx",
+      data_source     = NOAA_WORKBOOK_SOURCE,
+      web_update      = NA,
+      unit            = "degrees F (total change, 1896-2023)",
+      rows            = nrow(f3),
+      columns         = FIG3_COLUMNS
     )
   )
 )

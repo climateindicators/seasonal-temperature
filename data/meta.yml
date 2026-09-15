@@ -6,6 +6,30 @@ indicator:
   technical_documentation: https://19january2025snapshot.epa.gov/system/files/documents/2024-06/seasonal-temperature_documentation.pdf
   rights: Public domain, work of the U.S. Government (17 U.S.C. 105)
 datasets:
+- file: seasonal_temperature_annual_anomaly.csv
+  figure: Figure 1
+  figure_title: Figure 1
+  source_file: seasonal temperature - Figures 1 and 3 - 01-29-24.xlsx
+  source_sha256: 7a93cb53853a6fee9e3407f04c8940b7fc55797a63435b2ef206e0bc668a59ce
+  source_encoding: xlsx
+  data_source: NOAA National Centers for Environmental Information (nClimDiv, CONUS
+    averages), via EPA source workbook; downloaded by ERG from noaa.gov/cag on 2024-02-13
+  web_update: .na
+  unit: degrees F (anomaly vs. 1901-2000 average)
+  rows: 512
+  columns:
+  - name: year
+    type: integer
+    description: Year a season falls in (winter is assigned to the year it ends in,
+      e.g. Dec 2015-Feb 2016 is winter 2016).
+  - name: season
+    type: character
+    description: 'Meteorological season: Winter (Dec-Feb), Spring (Mar-May), Summer
+      (Jun-Aug), or Fall (Sep-Nov).'
+  - name: value
+    type: numeric
+    description: Average seasonal temperature anomaly vs. the 1901-2000 average, in
+      degrees Fahrenheit.
 - file: seasonal_temperature_change_by_state.csv
   figure: Figure 2
   figure_title: Figure 2. Change in Seasonal Temperatures by State, 1896–2023
@@ -28,3 +52,23 @@ datasets:
     type: numeric
     description: Total change in average seasonal temperature, 1896-2023, in degrees
       Fahrenheit.
+- file: seasonal_temperature_total_change_by_season.csv
+  figure: Figure 3
+  figure_title: Figure 3
+  source_file: seasonal temperature - Figures 1 and 3 - 01-29-24.xlsx
+  source_sha256: 7a93cb53853a6fee9e3407f04c8940b7fc55797a63435b2ef206e0bc668a59ce
+  source_encoding: xlsx
+  data_source: NOAA National Centers for Environmental Information (nClimDiv, CONUS
+    averages), via EPA source workbook; downloaded by ERG from noaa.gov/cag on 2024-02-13
+  web_update: .na
+  unit: degrees F (total change, 1896-2023)
+  rows: 4
+  columns:
+  - name: season
+    type: character
+    description: 'Meteorological season: Winter (Dec-Feb), Spring (Mar-May), Summer
+      (Jun-Aug), or Fall (Sep-Nov).'
+  - name: value
+    type: numeric
+    description: Total change in average seasonal temperature across the contiguous
+      48 states, 1896-2023, in degrees Fahrenheit.
