@@ -30,7 +30,7 @@ rd <- function(f) {
 meta <- yaml::read_yaml("data/meta.yml")
 
 cat("\nData dictionary\n")
-check("meta.yml documents 1 dataset(s)", length(meta$datasets) == 1L)
+check("meta.yml documents 3 dataset(s)", length(meta$datasets) == 3L)
 check("meta.yml has no timestamp",
       !any(grepl("\\d{4}-\\d{2}-\\d{2}T|Sys\\.time|generated_at",
                  readLines("data/meta.yml", warn = FALSE))))
@@ -57,6 +57,17 @@ for (f in list.files("data", pattern = "[.](csv|yml)$", full.names = TRUE)) {
 }
 
 cat("\nValue snapshots\n")
+f1 <- rd("seasonal_temperature_annual_anomaly.csv")
+check("fig1: 512 rows (128 years x 4 seasons)", nrow(f1) == 512L)
+check("fig1: first row is 1896 Winter 0.51",
+      identical(as.list(f1[1, ]), list(year = "1896", season = "Winter", value = "0.51")))
+check("fig1: last row is 2023 Fall 2.5",
+      identical(as.list(f1[nrow(f1), ]), list(year = "2023", season = "Fall", value = "2.5")))
+check("fig1: minimum value is 1979 Winter -5.62",
+      identical(f1$value[which.min(as.numeric(f1$value))], "-5.62"))
+check("fig1: maximum value is 2012 Spring 5.26",
+      identical(f1$value[which.max(as.numeric(f1$value))], "5.26"))
+
 f2 <- rd("seasonal_temperature_change_by_state.csv")
 check("fig2: 192 rows (48 states x 4 seasons)", nrow(f2) == 192L)
 check("fig2: first row is AL Winter 1.16784157",
@@ -67,6 +78,13 @@ check("fig2: minimum value is AL Summer -0.462790698",
       identical(f2$value[which.min(as.numeric(f2$value))], "-0.462790698"))
 check("fig2: maximum value is ND Winter 5.663117733",
       identical(f2$value[which.max(as.numeric(f2$value))], "5.663117733"))
+
+f3 <- rd("seasonal_temperature_total_change_by_season.csv")
+check("fig3: 4 rows (one per season)", nrow(f3) == 4L)
+check("fig3: Winter total change is 2.943982558139536",
+      identical(f3$value[f3$season == "Winter"], "2.943982558139536"))
+check("fig3: Fall total change is 1.5887863372093023",
+      identical(f3$value[f3$season == "Fall"], "1.5887863372093023"))
 
 cat("\n")
 if (length(failures)) {
