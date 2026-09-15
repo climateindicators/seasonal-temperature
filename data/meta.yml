@@ -1,0 +1,30 @@
+indicator:
+  name: Seasonal Temperature
+  slug: seasonal-temperature
+  publisher: U.S. Environmental Protection Agency
+  source_page: https://19january2025snapshot.epa.gov/climate-indicators/climate-change-indicators-seasonal-temperature/index.html
+  technical_documentation: https://19january2025snapshot.epa.gov/system/files/documents/2024-06/seasonal-temperature_documentation.pdf
+  rights: Public domain, work of the U.S. Government (17 U.S.C. 105)
+datasets:
+- file: seasonal_temperature_change_by_state.csv
+  figure: Figure 2
+  figure_title: Figure 2. Change in Seasonal Temperatures by State, 1896–2023
+  source_file: seasonal-temperature_fig-2.csv
+  source_sha256: a8243a5f7a0760e5504f28c34a9323dcca020c6b3d5b9c4b1e22b9d68f3afd87
+  source_encoding: UTF-8-BOM
+  data_source: NOAA, 2024
+  web_update: June 2024
+  unit: total change (degrees F)
+  rows: 192
+  columns:
+  - name: state
+    type: character
+    description: Two-letter U.S. state postal code (contiguous 48 states only).
+  - name: season
+    type: character
+    description: 'Meteorological season: Winter (Dec-Feb), Spring (Mar-May), Summer
+      (Jun-Aug), or Fall (Sep-Nov).'
+  - name: value
+    type: numeric
+    description: Total change in average seasonal temperature, 1896-2023, in degrees
+      Fahrenheit.

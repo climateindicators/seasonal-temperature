@@ -57,12 +57,16 @@ for (f in list.files("data", pattern = "[.](csv|yml)$", full.names = TRUE)) {
 }
 
 cat("\nValue snapshots\n")
-# TODO value snapshots: pin the actual numbers for each output file, so a
-# legitimate data update fails here and says exactly what changed. For each
-# dataset check at least: row count, the first and last row in source order,
-# and the minimum and maximum of each value column. Compare as strings where
-# the source precision matters. See the source CSV in data-raw/ for the values.
-check("value snapshots have been written", FALSE)
+f2 <- rd("seasonal_temperature_change_by_state.csv")
+check("fig2: 192 rows (48 states x 4 seasons)", nrow(f2) == 192L)
+check("fig2: first row is AL Winter 1.16784157",
+      identical(as.list(f2[1, ]), list(state = "AL", season = "Winter", value = "1.16784157")))
+check("fig2: last row is WY Fall 2.173510174",
+      identical(as.list(f2[nrow(f2), ]), list(state = "WY", season = "Fall", value = "2.173510174")))
+check("fig2: minimum value is AL Summer -0.462790698",
+      identical(f2$value[which.min(as.numeric(f2$value))], "-0.462790698"))
+check("fig2: maximum value is ND Winter 5.663117733",
+      identical(f2$value[which.max(as.numeric(f2$value))], "5.663117733"))
 
 cat("\n")
 if (length(failures)) {

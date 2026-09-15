@@ -6,10 +6,6 @@
 # data/meta.yml. Rerunning with unchanged inputs produces byte-identical output.
 # Nothing here touches the network.
 #
-# Generated as a stub by the build-indicator skill. Each figure below has a
-# `todo_reshape()` call standing where its reshape belongs. Replace that line,
-# then delete the todo_reshape() helper once no call to it remains.
-#
 # TO UPDATE THE DATA: drop replacement CSVs into data-raw/ and rerun. Headers
 # are asserted, not assumed, so a renamed or reordered column stops the build.
 
@@ -24,15 +20,6 @@ source(file.path(root, "R/utils/write_stable.R"))
 raw_dir <- file.path(root, "data-raw")
 out_dir <- file.path(root, "data")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-
-todo_reshape <- function(n) {
-  stop(
-    "R/build_data.R: the reshape for figure ", n, " has not been written yet.\n",
-    "Replace the todo_reshape(", n, ") call with the pivot that produces the tidy\n",
-    "long-format data frame for that figure, then remove this helper.",
-    call. = FALSE
-  )
-}
 
 # ---- Indicator constants -----------------------------------------------------
 
@@ -61,16 +48,21 @@ assert_headers(
   what             = "seasonal-temperature_fig-2.csv"
 )
 
-# TODO reshape: 48 rows, State + 4 series.
-# Source headers: State | Winter | Spring | Summer | Fall
-# Units line: total change (degrees F)
-# Produce a tidy long-format data frame. Keep every value as character: the
-# source carries up to 10 significant digits and must survive byte for byte.
-f2 <- todo_reshape(2)
+SEASONS <- c("Winter", "Spring", "Summer", "Fall")
 
-# The output name below is a placeholder. Rename it for what the figure
-# actually carries, the way river_flooding_magnitude.csv does.
-write_csv_stable(f2, file.path(out_dir, "seasonal_temperature_fig2.csv"))
+f2 <- f2_raw |>
+  dplyr::rename(state = State) |>
+  tidyr::pivot_longer(
+    cols      = dplyr::all_of(SEASONS),
+    names_to  = "season",
+    values_to = "value"
+  ) |>
+  dplyr::filter(trimws(value) != "") |>
+  dplyr::arrange(state, match(season, SEASONS))
+
+assert_conservation(f2_raw, SEASONS, nrow(f2), "seasonal-temperature_fig-2.csv")
+
+write_csv_stable(f2, file.path(out_dir, "seasonal_temperature_change_by_state.csv"))
 
 # ---- Data dictionary ---------------------------------------------------------
 
@@ -78,16 +70,17 @@ col <- function(name, type, description) {
   list(name = name, type = type, description = description)
 }
 
-# One entry per output column, in order, filled from the data frame itself so it
-# cannot drift. `type` and `description` are deliberately blank: tests/test-data.R
-# fails while either is empty, so every column has to be documented by hand.
-describe <- function(df) lapply(names(df), function(nm) col(nm, "", ""))
+FIG2_COLUMNS <- list(
+  col("state", "character", "Two-letter U.S. state postal code (contiguous 48 states only)."),
+  col("season", "character", "Meteorological season: Winter (Dec-Feb), Spring (Mar-May), Summer (Jun-Aug), or Fall (Sep-Nov)."),
+  col("value", "numeric", "Total change in average seasonal temperature, 1896-2023, in degrees Fahrenheit.")
+)
 
 meta <- list(
   indicator = INDICATOR,
   datasets = list(
     list(
-      file            = "seasonal_temperature_fig2.csv",
+      file            = "seasonal_temperature_change_by_state.csv",
       figure          = "Figure 2",
       figure_title    = f2_meta$title,
       source_file     = "seasonal-temperature_fig-2.csv",
@@ -97,7 +90,7 @@ meta <- list(
       web_update      = f2_meta$web_update,
       unit            = f2_meta$units,
       rows            = nrow(f2),
-      columns         = describe(f2)
+      columns         = FIG2_COLUMNS
     )
   )
 )
